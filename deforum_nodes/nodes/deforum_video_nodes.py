@@ -144,10 +144,11 @@ class DeforumLoadVideo:
         return (frame, self.current_frame, max_frames)
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
 
     @classmethod
     def VALIDATE_INPUTS(cls, video):
@@ -442,10 +443,11 @@ class DeforumVideoSaveNode:
         return output_path
 
     @classmethod
-    def IS_CHANGED(s, text, autorefresh):
+    def IS_CHANGED(s, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
 
 
 def encode_audio_base64(audio_data, frame_count, fps):
