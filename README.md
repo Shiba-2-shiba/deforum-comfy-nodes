@@ -1,3 +1,13 @@
+# Fork Version
+
+This repository is designed to test for fix following errors
+
+1. Error associated with  「IS_CHANGED」
+   
+2. Add Color-Matching. This change need adding 「pip install Color-Matching」
+
+3. Compatibility with Python 3.10, 3.12 and PyTorch 2.6.0+cu12.6
+
 # Deforum for ComfyUI
 
 Deforum integration for ComfyUI.
