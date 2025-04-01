@@ -3,10 +3,11 @@
 class DeforumCacheLatentNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -38,10 +39,11 @@ class DeforumCacheLatentNode:
 class DeforumGetCachedLatentNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -69,10 +71,11 @@ class DeforumGetCachedLatentNode:
 
 class DeforumCacheImageNode:
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -103,10 +106,11 @@ class DeforumCacheImageNode:
 class DeforumGetCachedImageNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -141,10 +145,11 @@ class DeforumGetCachedImageNode:
 
 class DeforumCacheStringNode:
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -175,10 +180,11 @@ class DeforumCacheStringNode:
 class DeforumGetCachedStringNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return float("NaN")
 
     @classmethod
     def INPUT_TYPES(cls):
