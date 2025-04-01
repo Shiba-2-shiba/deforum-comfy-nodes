@@ -17,10 +17,11 @@ class DeforumImageSwitcherNode:
                }
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "compare"
@@ -48,10 +49,11 @@ class DeforumComparatorNode:
                }
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
 
     RETURN_TYPES = ("BOOLEAN",)
     FUNCTION = "compare"
@@ -85,10 +87,11 @@ class DeforumFloatComparatorNode:
                }
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
 
     RETURN_TYPES = ("BOOLEAN",)
     FUNCTION = "compare"
