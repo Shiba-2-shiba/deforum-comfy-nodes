@@ -175,7 +175,7 @@ def install_packages():
     # subprocess.run(["pip", "install", "-r", "requirements.txt"], check=True)
 
     # Force reinstall the deforum-studio package from Git
-    subprocess.run(["pip", "install", "--force-reinstall", "git+https://github.com/XmYx/deforum-studio.git"],
+    subprocess.run(["pip", "install", "--force-reinstall", "git+https://github.com/Shiba-2-shiba/deforum-studio.git"],
                    check=True)
 
 
@@ -244,7 +244,7 @@ def install_reqs():
     # Install deforum-studio with 'comfy' extras and no dependencies
     subprocess.check_call([
         'pip', 'install', '--no-deps',
-        'git+https://github.com/XmYx/deforum-studio.git#egg=deforum[comfy]'
+        'git+https://github.com/Shiba-2-shiba/deforum-studio.git#egg=deforum[comfy]'
     ])
 
 
@@ -260,5 +260,5 @@ if __name__ == "__main__":
         install_reqs()
         print("Installation complete.")
     except Exception as e:
-        print("[warning] deforum backend package install failed, if you encounter any issues, please activate your venv and run:\npip install git+https://github.com/XmYxdeforum-studio.git\nIf you are using ComfyUI portable, you have to locate your python executable and add that's path before the pip install command.")
+        print("[warning] deforum backend package install failed, if you encounter any issues, please activate your venv and run:\npip install git+https://github.com/Shiba-2-shiba/deforum-studio.git\nIf you are using ComfyUI portable, you have to locate your python executable and add that's path before the pip install command.")
         pass
