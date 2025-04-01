@@ -295,7 +295,12 @@ deforum_color_coherence_params = {
 
     "color_coherence": {
         "type": "dropdown",
-        "choices": ["None", "HSV", "LAB", "RGB", "Video Input", "Image"]
+        "choices": [
+            "None",
+            "HSV", "LAB", "RGB", # skimage methods
+            "HM", "Reinhard", "MVGD", "MKL", "HM-MVGD-HM", "HM-MKL-HM", # color-matcher methods (追加)
+            "Video Input", "Image" # Special modes
+            ]
     },
     "color_coherence_image_path": {
         "type": "lineedit",
@@ -318,7 +323,6 @@ deforum_color_coherence_params = {
     },
 
 }
-
 
 deforum_depth_params = {
 
