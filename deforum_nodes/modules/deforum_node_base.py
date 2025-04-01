@@ -9,10 +9,11 @@ class DeforumDataBase:
     OUTPUT_NODE = True
     CATEGORY = f"deforum/parameters"
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh):
+    def IS_CHANGED(cls, text, autorefresh, **kwargs):
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
+        return None
     def get(self, deforum_data=None, *args, **kwargs):
 
         if deforum_data:
