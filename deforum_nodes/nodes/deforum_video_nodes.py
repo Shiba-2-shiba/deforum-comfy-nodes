@@ -448,6 +448,7 @@ class DeforumVideoSaveNode:
     # def IS_CHANGED(s, text, autorefresh, **kwargs):
     def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
         # Force re-evaluation of the node
+        autorefresh = kwargs.get('autorefresh', 'No')
         if autorefresh == "Yes":
             return float("NaN")
         return float("NaN")
