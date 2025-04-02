@@ -3,7 +3,9 @@
 class DeforumCacheLatentNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -39,7 +41,9 @@ class DeforumCacheLatentNode:
 class DeforumGetCachedLatentNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -71,7 +75,9 @@ class DeforumGetCachedLatentNode:
 
 class DeforumCacheImageNode:
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -106,7 +112,9 @@ class DeforumCacheImageNode:
 class DeforumGetCachedImageNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -145,7 +153,9 @@ class DeforumGetCachedImageNode:
 
 class DeforumCacheStringNode:
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -180,7 +190,9 @@ class DeforumCacheStringNode:
 class DeforumGetCachedStringNode:
 
     @classmethod
-    def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    # def IS_CHANGED(cls, text, autorefresh, **kwargs):
+    def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
+    autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
