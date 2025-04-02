@@ -19,7 +19,7 @@ class DeforumImageSwitcherNode:
     @classmethod
     # def IS_CHANGED(cls, text, autorefresh, **kwargs):
     def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
-    autorefresh = kwargs.get('autorefresh', 'No')
+        autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -53,7 +53,7 @@ class DeforumComparatorNode:
     @classmethod
     # def IS_CHANGED(cls, text, autorefresh, **kwargs):
     def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
-    autorefresh = kwargs.get('autorefresh', 'No')
+        autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
@@ -93,7 +93,7 @@ class DeforumFloatComparatorNode:
     @classmethod
     # def IS_CHANGED(cls, text, autorefresh, **kwargs):
     def IS_CHANGED(cls, **kwargs): # 再改訂後のシグネチャ
-    autorefresh = kwargs.get('autorefresh', 'No')
+        autorefresh = kwargs.get('autorefresh', 'No')
         # Force re-evaluation of the node
         if autorefresh == "Yes":
             return float("NaN")
