@@ -8,6 +8,15 @@ This repository is designed to test for fix following errors
 
 3. Compatibility with Python 3.10, 3.12 and PyTorch 2.6.0+cu12.6
 
+4. In Stability matrix, you can manually install deforum-comfy-nodes with the following command
+
+
+```bash
+Your custom_nodes directory  git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes
+
+"Your directory \StabilityMatrix\Data\Packages\ComfyUI\venv\Scripts\python.exe" -m pip install  color-matcher git+https://github.com/Shiba-2-shiba/deforum-studio.git
+```
+
 # Deforum for ComfyUI
 
 Deforum integration for ComfyUI.
