@@ -6,7 +6,7 @@ This repository is designed to test for fix following errors
    
 2. Add Color-Matching. This change need adding 「pip install Color-Matching」
 
-3. Compatibility with Python 3.10, 3.12 and PyTorch 2.6.0+cu12.6
+3. Compatibility with Python 3.10, 3.12 and PyTorch 2.7.0
 
 4. In Stability matrix, you can manually install deforum-comfy-nodes with the following command
 
@@ -17,6 +17,16 @@ Your custom_nodes directory  git clone https://github.com/Shiba-2-shiba/deforum-
 "Your directory \StabilityMatrix\Data\Packages\ComfyUI\venv\Scripts\python.exe" -m pip install  color-matcher git+https://github.com/Shiba-2-shiba/deforum-studio.git
 ```
 
+In paperspace you must reinstall pytorch 2.7.0+cuda12.8 like below
+
+```bash
+
+%cd /Your directory/ComfyUI/custom_nodes
+!git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes.git
+!pip install --ignore-installed blinker --no-cache-dir git+https://github.com/Shiba-2-shiba/deforum-studio.git
+!pip install torch==2.7.0+cu128 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 --force-reinstall
+
+```
 # Deforum for ComfyUI
 
 Deforum integration for ComfyUI.
