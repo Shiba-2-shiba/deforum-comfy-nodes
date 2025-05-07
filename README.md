@@ -17,14 +17,14 @@ Your custom_nodes directory  git clone https://github.com/Shiba-2-shiba/deforum-
 "Your directory \StabilityMatrix\Data\Packages\ComfyUI\venv\Scripts\python.exe" -m pip install  color-matcher git+https://github.com/Shiba-2-shiba/deforum-studio.git
 ```
 
-In paperspace you must reinstall pytorch 2.7.0+cuda12.8 like below
+In paperspace in pytorch 2.7.0+cuda12.8, you must upgrade install blinker before install.
 
 ```bash
 
+!pip install --ignore-installed blinker
 %cd /Your directory/ComfyUI/custom_nodes
 !git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes.git
-!pip install --ignore-installed blinker --no-cache-dir git+https://github.com/Shiba-2-shiba/deforum-studio.git
-!pip install torch==2.7.0+cu128 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 --force-reinstall
+!pip install --no-cache-dir git+https://github.com/Shiba-2-shiba/deforum-studio.git
 
 ```
 # Deforum for ComfyUI
