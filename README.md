@@ -80,7 +80,6 @@ Some Windows setups use a zipped `distutils` and fail to build `pims>=0.6.1`. To
    ```
 
 
-```
 # Deforum for ComfyUI
 
 Deforum integration for ComfyUI.
