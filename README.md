@@ -8,23 +8,77 @@ This repository is designed to test for fix following errors
 
 3. Compatibility with Python 3.10, 3.12 and PyTorch 2.7.0
 
-4. In Stability matrix, you can manually install deforum-comfy-nodes with the following command
+## Installation
 
-
-```bash
-Your custom_nodes directory  git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes
-
-"Your directory \StabilityMatrix\Data\Packages\ComfyUI\venv\Scripts\python.exe" -m pip install  color-matcher git+https://github.com/Shiba-2-shiba/deforum-studio.git
-```
+### 1. Standard pip install
 
 In paperspace in pytorch 2.7.0+cuda12.8, you must upgrade install blinker before install.
 
 ```bash
-
 !pip install --ignore-installed blinker
 %cd /Your directory/ComfyUI/custom_nodes
 !git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes.git
 !pip install --no-cache-dir git+https://github.com/Shiba-2-shiba/deforum-studio.git
+```
+
+> **Note:** If you are *not* using the Docker image `shibashiba2/paperspace-gradient-base-pytorch270:v1.2`, you must pre-install additional environment packages:
+>
+> ````bash
+> pip install pims==0.7 pandas numexpr simpleeval pydub loguru clip-interrogator contexttimer librosa mutagen py3d pyqt6 pyqt6-qt6 pyqtgraph python-decouple qtpy streamlit moviepy==1.0.3
+>
+> pip install git+[https://github.com/Shiba-2-shiba/deforum-studio.git](https://github.com/Shiba-2-shiba/deforum-studio.git)
+> ````
+
+
+### 2. Installing within Stability Matrix (Windows)
+
+```bash
+%cd /Your directory/ComfyUI/custom_nodes
+git clone https://github.com/Shiba-2-shiba/deforum-comfy-nodes.git
+> ````
+
+If you run ComfyUI under Stability Matrix on Windows, install directly into the embedded Python:
+
+```bash
+"<YourPath>\StabilityMatrix\Data\Packages\ComfyUI\venv\Scripts\python.exe" \
+  -m pip install git+https://github.com/Shiba-2-shiba/deforum-studio.git
+```
+
+### 3. Fixing Windows „pims“ build errors
+
+Some Windows setups use a zipped `distutils` and fail to build `pims>=0.6.1`. To avoid build errors, extract a live copy of `distutils` and pre-install dependencies:
+
+1. Change to your venv folder:
+
+   ```bat
+   cd /d <YourPath>\StabilityMatrix\Data\Packages\ComfyUI\venv
+   ```
+
+2. Expand `python310.zip` to a local `_distutils` directory:
+
+   ```bat
+   powershell -Command "Expand-Archive -Path Scripts\python310.zip -DestinationPath Lib\_distutils -Force"
+   ```
+
+3. Upgrade build tools:
+
+   ```bat
+   Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+   ```
+
+4. Pre-install binary-compatible `pims` and other dependencies:
+
+   ```bat
+   Scripts\python.exe -m pip install pims==0.7 pandas numexpr simpleeval pydub loguru clip-interrogator contexttimer librosa mutagen py3d pyqt6 pyqt6-qt6 pyqtgraph python-decouple qtpy streamlit moviepy==1.0.3
+
+   ```
+
+5. Finally, install Deforum Studio without re-building dependencies:
+
+   ```bat
+   Scripts\python.exe -m pip install --no-deps git+https://github.com/Shiba-2-shiba/deforum-studio.git
+   ```
+
 
 ```
 # Deforum for ComfyUI
