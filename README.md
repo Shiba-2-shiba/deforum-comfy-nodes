@@ -6,7 +6,9 @@ This repository is designed to test for fix following errors
    
 2. Add Color-Matching. This change need adding 「pip install Color-Matching」
 
-3. Compatibility with Python 3.10, 3.12 and PyTorch 2.7.0
+3. Change deforumvideo node and change moviepy to version >2.x
+
+4. Compatibility with Python 3.10, 3.12 and PyTorch 2.7.0
 
 ## Installation
 
