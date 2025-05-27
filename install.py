@@ -238,7 +238,7 @@ def install_reqs():
         'python-decouple>=3.8',
         'timm>=0.6.13',
         'scikit-image>=0.21.0',
-        'moviepy<2.0.0.dev1'
+        'moviepy>=2.0.0.dev1'
     ])
 
     # Install deforum-studio with 'comfy' extras and no dependencies
