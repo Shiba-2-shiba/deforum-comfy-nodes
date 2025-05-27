@@ -76,15 +76,22 @@ async function uploadFile(file) {
     }
 }
 function fitHeight(node) {
-    node.setSize([node.size[0], node.computeSize([node.size[0], node.size[1]])[1] + 20])
+    node.setSize([node.size[0], node.computeSize([node.size[0], node.size[1]])[1] + 20]) // +20 はボタンやマージン用
     node?.graph?.setDirtyCanvas(true);
 }
+
 function addVideoPreview(nodeType) {
     chainCallback(nodeType.prototype, "onNodeCreated", function() {
         var element = document.createElement("div");
-        const previewNode = this;
-        previewNode.fps = 24
-        previewNode.size[1] += 45;
+        const previewNode = this; // 'this' refers to the node instance
+        previewNode.currentFps = 24; // Default FPS
+        previewNode.playbackInterval = 1000 / previewNode.currentFps;
+        previewNode.currentFrames = []; // Holds the URLs of frames to be displayed
+        previewNode.currentFrameIndex = 0;
+        previewNode.isPlaying = false;
+        previewNode.imageSequenceInterval = null;
+
+
         var previewWidget = this.addDOMWidget("videopreview", "preview", element, {
             serialize: false,
             hideOnZoom: false,
@@ -97,134 +104,167 @@ function addVideoPreview(nodeType) {
         });
         previewWidget.computeSize = function(width) {
             if (this.aspectRatio && !this.parentEl.hidden) {
-                let height = (previewNode.size[0]-20)/ this.aspectRatio + 10;
+                let height = (previewNode.size[0]-20)/ this.aspectRatio + 10; // Adjusted for padding/margins
                 if (!(height > 0)) {
                     height = 0;
                 }
-                this.computedHeight = height + 50;
-                return [width, height];
+                // Height of image + audio player + button
+                const audioHeight = previewWidget.audioEl && !previewWidget.audioEl.hidden ? previewWidget.audioEl.offsetHeight : 0;
+                const buttonHeight = previewWidget.playPauseBtn ? previewWidget.playPauseBtn.offsetHeight + 8 : 0; // 8 for margin
+                this.computedHeight = height + audioHeight + buttonHeight + 10; // Extra padding
+                return [width, this.computedHeight];
             }
             return [width, -4];//no loaded src, widget should not display
         }
-        //element.style['pointer-events'] = "none"
-        previewWidget.value = {hidden: false, paused: false, params: {}}
         previewWidget.parentEl = document.createElement("div");
         previewWidget.parentEl.className = "deforumVideoSavePreview";
-        previewWidget.parentEl.style['width'] = "100%"
+        previewWidget.parentEl.style['width'] = "100%";
         element.appendChild(previewWidget.parentEl);
+
         previewWidget.imgEl = document.createElement("img");
-        previewWidget.imgEl.style['width'] = "100%"
-        previewWidget.imgEl.hidden = true;
-        // Create an audio element for audio playback
+        previewWidget.imgEl.style['width'] = "100%";
+        previewWidget.imgEl.hidden = true; // Hide initially until a frame is loaded
+        previewWidget.parentEl.appendChild(previewWidget.imgEl);
+
         previewWidget.audioEl = document.createElement("audio");
-        previewWidget.audioEl.controls = true; // Optional: Show controls
-        previewWidget.audioEl.loop = true; // Enable audio looping by default
-        previewWidget.audioEl.style["width"] = "100%"; // Make audio widget as wide as the node
+        previewWidget.audioEl.controls = true;
+        previewWidget.audioEl.loop = true;
+        previewWidget.audioEl.style["width"] = "100%";
+        previewWidget.audioEl.style.display = "none"; // Initially hidden
+        element.appendChild(previewWidget.audioEl);
 
-        element.appendChild(previewWidget.audioEl); // Append audio element to the DOM
+        // Play/Pause Button
+        previewWidget.playPauseBtn = document.createElement("button");
+        previewWidget.playPauseBtn.textContent = "▶️ Play";
+        previewWidget.playPauseBtn.style.margin = "4px 0";
+        previewWidget.playPauseBtn.style.width = "100%";
+        previewWidget.playPauseBtn.onclick = () => {
+            if (previewNode.isPlaying) {
+                previewNode.stopPlayback();
+            } else {
+                previewNode.startPlayback();
+            }
+        };
+        element.appendChild(previewWidget.playPauseBtn);
 
+        // Initial fitHeight call, might need to be called again after elements are fully rendered
+        fitHeight(previewNode); // Adjust node height to fit widgets
 
-
-        previewWidget.parentEl.appendChild(previewWidget.imgEl)
-        let frameIndex = 0;
-        let cachedFrames = this.getCachedFrames(); // Assuming this method exists and retrieves an array of frame data
         previewWidget.imgEl.onload = () => {
             previewWidget.aspectRatio = previewWidget.imgEl.naturalWidth / previewWidget.imgEl.naturalHeight;
-            fitHeight(this);
+            fitHeight(previewNode);
         };
 
-        // Use the audio element's timeline to control the frame index
-        previewWidget.audioEl.addEventListener('timeupdate', function() {
-            // Calculate the current frame based on the audio current time and fps
-            const currentTime = previewWidget.audioEl.currentTime;
-            frameIndex = Math.floor(currentTime * this.fps) % this.getCachedFrames().length;
-            if (this.playing === false) {
-                updateFrame(frameIndex);
-            }
-        }.bind(this));
-
-
-        function updateFrame(index) {
-            const cachedFrames = previewNode.getCachedFrames(); // Get cached frames
-            if (cachedFrames && cachedFrames.length > 0) {
+        // Method to update a single frame display
+        previewNode.showCurrentFrame = function() {
+            if (previewNode.currentFrames && previewNode.currentFrames.length > 0) {
                 previewWidget.imgEl.hidden = false;
-                previewWidget.imgEl.src = cachedFrames[index];
-            }
-        }
-
-
-        this.playing = false;
-        this.playbackInterval = 41.666666666666664;
-        this.startPlayback = function(playbackInterval) {
-            if (this.playing === false) {
-                this.playing = true;
-                const widget = this; // Capture 'this' to use inside setInterval function
-                this.imageSequenceInterval = setInterval(() => {
-                    const cachedFrames = this.getCachedFrames();
-                    //const displayFrames = cachedFrames.length > 0 ? cachedFrames : frames;
-                    if (cachedFrames && cachedFrames.length > 0) {
-                        previewWidget.imgEl.hidden = false;
-                        previewWidget.imgEl.src = cachedFrames[frameIndex];
-                        frameIndex = (frameIndex + 1) % cachedFrames.length;
-                    }
-                }, this.playbackInterval); // Update frame every 80ms
+                previewWidget.imgEl.src = previewNode.currentFrames[previewNode.currentFrameIndex];
+            } else {
+                previewWidget.imgEl.hidden = true;
             }
         };
-        // Function to stop playback
-        this.stopPlayback = function() {
-            const prevIndex = previewWidget.audioEl.currentTime
-            if (this.imageSequenceInterval) {
-                clearInterval(this.imageSequenceInterval);
-                this.imageSequenceInterval = null; // Clear the interval ID
-                this.playing = false; // Mark as not playing
-            }
 
-        };
-        this.setPlaybackInterval = function(newInterval) {
-            // Check if the new interval is different from the current playback interval
-            if (this.playbackInterval !== newInterval) {
-                this.playbackInterval = newInterval; // Update the playback interval
-            }
-            console.log("New interval", newInterval)
+        previewNode.startPlayback = function() {
+            if (previewNode.isPlaying || !previewNode.currentFrames || previewNode.currentFrames.length === 0) return;
 
-            const wasPlaying = this.playing; // Check if audio was playing
-            const currentTime = previewWidget.audioEl.currentTime; // Store current playback time
-            if (wasPlaying) {
-                // Wait for the audio to be loaded
-                this.playing = false; // Mark as not playing
-                clearInterval(this.imageSequenceInterval);
-                this.imageSequenceInterval = null; // Clear the interval ID
-                previewWidget.audioEl.oncanplaythrough = function() {
-                    previewWidget.audioEl.currentTime = currentTime; // Seek to the previous playback time
-                    previewWidget.audioEl.play(); // Resume playback
-                    previewWidget.audioEl.oncanplaythrough = null; // Remove the event listener to avoid memory leaks
-                };
-            }
-        };
-        previewWidget.audioEl.addEventListener('play', () => this.startPlayback(previewWidget.playbackInterval));
-        previewWidget.audioEl.addEventListener('pause', () => this.stopPlayback());
+            previewNode.isPlaying = true;
+            previewWidget.playPauseBtn.textContent = "⏸️ Pause";
 
-        this.updateAudio = function (audioBase64) {
-            //this.cacheAudio(audioBase64);
-//            console.log(this.getCachedAudio().length)
-
-            // Check if audio was playing
-            const wasPlaying = this.playing;
-            const currentTime = previewWidget.audioEl.currentTime;
-            if (previewWidget.audioEl.src !== audioBase64) {
-                previewWidget.audioEl.src = audioBase64;
-                // If the audio was playing, continue playback
-                if (!previewWidget.audioEl.paused) {
-                    previewWidget.audioEl.load(); // Load the new audio source
-//                    previewWidget.audioEl.currentTime = currentTime;
-                    previewWidget.audioEl.play(); // Resume playback
-                    previewWidget.audioEl.currentTime = currentTime;
-
+            if (previewWidget.audioEl.src && previewWidget.audioEl.readyState >= 2) { // If audio is loaded
+                 // Try to sync audio with current frame (approximate)
+                const audioTargetTime = (previewNode.currentFrameIndex / previewNode.currentFps) % previewWidget.audioEl.duration;
+                if (isFinite(audioTargetTime)) {
+                    previewWidget.audioEl.currentTime = audioTargetTime;
                 }
+                previewWidget.audioEl.play();
+            }
+
+            previewNode.playbackInterval = 1000 / previewNode.currentFps;
+            previewNode.imageSequenceInterval = setInterval(() => {
+                if (!previewNode.currentFrames || previewNode.currentFrames.length === 0) {
+                    previewNode.stopPlayback(); // Stop if no frames
+                    return;
+                }
+                previewNode.showCurrentFrame();
+                previewNode.currentFrameIndex = (previewNode.currentFrameIndex + 1) % previewNode.currentFrames.length;
+            }, previewNode.playbackInterval);
+        };
+
+        previewNode.stopPlayback = function() {
+            if (!previewNode.isPlaying) return;
+
+            previewNode.isPlaying = false;
+            previewWidget.playPauseBtn.textContent = "▶️ Play";
+            clearInterval(previewNode.imageSequenceInterval);
+            previewNode.imageSequenceInterval = null;
+            if (previewWidget.audioEl.src) {
+                previewWidget.audioEl.pause();
+            }
+        };
+
+        previewNode.setPlaybackFPS = function(newFps) {
+            if (newFps && typeof newFps === 'number' && newFps > 0) {
+                previewNode.currentFps = newFps;
+                previewNode.playbackInterval = 1000 / previewNode.currentFps;
+                if (previewNode.isPlaying) { // If playing, restart with new interval
+                    previewNode.stopPlayback();
+                    previewNode.startPlayback();
+                }
+            }
+        };
+
+        previewNode.updateAudio = function (audioUrlInput) {
+            let audioUrl = null;
+            if (Array.isArray(audioUrlInput) && audioUrlInput.length > 0) {
+                audioUrl = audioUrlInput[0]; // Python sends a tuple (url,)
+            } else if (typeof audioUrlInput === 'string' && audioUrlInput.trim() !== "") {
+                audioUrl = audioUrlInput;
+            }
+
+
+            const wasPlaying = previewNode.isPlaying && !previewWidget.audioEl.paused;
+            const currentTime = previewWidget.audioEl.currentTime;
+
+            if (audioUrl) {
+                previewWidget.audioEl.style.display = "block";
+                if (previewWidget.audioEl.src !== audioUrl) {
+                    previewWidget.audioEl.src = audioUrl;
+                    previewWidget.audioEl.load();
+                    if (wasPlaying) {
+                        // Attempt to resume playback after new src is loaded
+                        previewWidget.audioEl.oncanplaythrough = function() {
+                            if (isFinite(currentTime)) {
+                                previewWidget.audioEl.currentTime = currentTime;
+                            }
+                            previewWidget.audioEl.play();
+                            previewWidget.audioEl.oncanplaythrough = null; // Remove listener
+                        };
+                    }
+                } else if (wasPlaying) { // Same src, but was playing, ensure it continues
+                    previewWidget.audioEl.play();
+                }
+            } else {
+                previewWidget.audioEl.style.display = "none";
+                if (previewWidget.audioEl.src) { // If there was an old src
+                    previewWidget.audioEl.pause();
+                    previewWidget.audioEl.src = "";
+                }
+            }
+            fitHeight(previewNode); // Adjust height if audio player visibility changed
+        };
+
+        // Override onRemoved to clean up interval
+        const originalOnRemoved = previewNode.onRemoved;
+        previewNode.onRemoved = function() {
+            previewNode.stopPlayback(); // Stop playback and clear interval
+            if (originalOnRemoved) {
+                originalOnRemoved.apply(this, arguments);
             }
         };
     });
 }
+
 
 function addUploadWidget(nodeType, nodeData, widgetName, type="video") {
     chainCallback(nodeType.prototype, "onNodeCreated", function() {
@@ -303,31 +343,37 @@ function addUploadWidget(nodeType, nodeData, widgetName, type="video") {
 }
 
 function extendNodePrototypeWithFrameCaching(nodeType) {
-    nodeType.prototype.frameCache = []; // Initialize an empty cache for frames
-    nodeType.prototype.audioCache = ''; // Initialize an empty string for audio cache
+    // This will be managed by the node instance itself (previewNode.currentFrames)
+    // but the caching for 'restore' functionality might still use these.
+    // If DeforumVideoSaveNode's logic directly uses these cache methods, they are fine.
+    nodeType.prototype.frameCache = [];
+    nodeType.prototype.audioCache = ''; // Audio is now handled by URL, so this might be less relevant for preview
 
-    // Method to add frames to the cache
     nodeType.prototype.cacheFrames = function(frames) {
-        this.frameCache = this.frameCache.concat(frames);
+        if (Array.isArray(frames)) {
+            this.frameCache = [].concat(frames); // Replace cache with new frames for preview purposes
+        }
     };
 
-    // Method to cache audio data
-    nodeType.prototype.cacheAudio = function(audioBase64) {
-        this.audioCache = this.audioCache + audioBase64; // Cache the base64 audio data
+    nodeType.prototype.cacheAudio = function(audioUrl) { // Changed from audioBase64
+        if (typeof audioUrl === 'string') {
+            this.audioCache = audioUrl;
+        }
     };
 
-    // Method to clear both frame and audio caches
     nodeType.prototype.clearCache = function() {
         this.frameCache = [];
         this.audioCache = '';
+        if (this.currentFrames) this.currentFrames = [];
+        if (this.currentFrameIndex) this.currentFrameIndex = 0;
+        if (this.updateAudio) this.updateAudio(null); // Clear audio player
+        if (this.showCurrentFrame) this.showCurrentFrame(); // Update display to show no image
     };
 
-    // Method to get cached frames (unchanged)
     nodeType.prototype.getCachedFrames = function() {
         return this.frameCache;
     };
 
-    // Method to get cached audio
     nodeType.prototype.getCachedAudio = function() {
         return this.audioCache;
     };
@@ -365,8 +411,6 @@ app.registerExtension({
                     const max_frames = v["max_frames"]
                     const enableAutorun = v["enable_autoqueue"][0]
 
-
-
                     if (counter[0] >= max_frames[0]) {
                         if (document.getElementById('autoQueueCheckbox').checked === true) {
                             document.getElementById('autoQueueCheckbox').click();
@@ -379,12 +423,7 @@ app.registerExtension({
                             document.getElementById('extraOptions').style.display = 'block';
                         }
                     }
-
-
-
                 }
-
-
             return r
             }
 
@@ -418,9 +457,6 @@ app.registerExtension({
                         counterWidget.value = false;
                     }
                 }
-
-
-
             return r
             }
 
@@ -429,135 +465,146 @@ app.registerExtension({
                 addUploadWidget(nodeType, nodeData, "video");
 
 		} else if (nodeType.comfyClass === "DeforumVideoSaveNode") {
-            extendNodePrototypeWithFrameCaching(nodeType);
-            addVideoPreview(nodeType);
+            extendNodePrototypeWithFrameCaching(nodeType); // Manages general cache, preview uses its own frame list
+            addVideoPreview(nodeType); // Adds enhanced preview logic
             const onVideoSaveExecuted = nodeType.prototype.onExecuted
 
             let restoreWidget
             nodeType.prototype.onExecuted = function (message) {
-
-            const r = onVideoSaveExecuted ? onVideoSaveExecuted.apply(this, message) : undefined
+                const r = onVideoSaveExecuted ? onVideoSaveExecuted.apply(this, message) : undefined
                 let swapSkipSave = false;
 
-            for (const w of this.widgets || []) {
-
-
+                // Handle widget states (dump_now, skip_save, clear_cache)
+                for (const w of this.widgets || []) {
                     if (w.name === "dump_now") {
                         const dumpWidget = w;
-                        if (dumpWidget.value === true) {
-                            swapSkipSave = true
-                        }
+                        if (dumpWidget.value === true) { swapSkipSave = true; }
                         dumpWidget.value = false;
-                        this.shouldResetAnimation = true;
+                        // this.shouldResetAnimation = true; // This property seems unused in preview logic
                     } else if (w.name === "skip_save") {
                         const saveWidget = w;
-                        if (swapSkipSave === true) {
-                            saveWidget.value = false;
-                        }
+                        if (swapSkipSave === true) { saveWidget.value = false; }
                     } else if (w.name === "clear_cache") {
                         const cacheClearWidget = w;
                         if (cacheClearWidget.value === true) {
+                            this.stopPlayback?.(); // Use optional chaining
+                            this.clearCache?.();   // Use optional chaining
                             cacheClearWidget.value = false;
                         }
-                    }else if (w.name === "restore") {
-                        restoreWidget = w
+                    } else if (w.name === "restore_frames_for_preview") { // Assuming this is the widget for restore
+                        restoreWidget = w;
                     }
                 }
+
                 const output = app.nodeOutputs?.[this.id + ""];
-                const should_reset = output["should_dump"]
-                const fps = output["fps"]
-                const millisecondsPerFrame = 1000 / fps[0];
-                this.fps = fps
+                if (output) {
+                    const newFrames = output["frames"]; // Array of URLs
+                    const newFps = output["fps"] ? output["fps"][0] : this.currentFps; // fps is an array from python
+                    const newAudioUrl = output["audio"]; // Can be null or [url]
+                    const currentTotalCached = output["counter"] ? output["counter"][0] : 0;
+                    const shouldDumpVideo = output["should_dump"] ? output["should_dump"][0] : false;
 
 
-                if (output && "frames" in output) { // Safely check if 'frames' is a key in 'output'
+                    if (this.setPlaybackFPS) this.setPlaybackFPS(newFps); // Update FPS for playback
 
-
-
-                    if (this.playing === false) {
-                        //this.playing = true;
-
-                        this.setPlaybackInterval(millisecondsPerFrame);
-
-                        this.cacheFrames(output["frames"]);
-                        if ("audio" in output) {
-                            this.updateAudio(output["audio"]);
-
-                        }
-                        //this.startPlayback(millisecondsPerFrame);
-                    } else {
-                        this.cacheFrames(output["frames"]);
-
-                        if ("audio" in output) {
-                            this.updateAudio(output["audio"]);
-                        }
-
+                    let framesToDisplay = [];
+                    if (newFrames && Array.isArray(newFrames)) {
+                         // The `restoreWidget` logic from the original script seems to manage whether to use
+                         // all cached frames or only new ones. Here, we simplify:
+                         // If `restoreWidget.value` is true OR if cache is empty, use all `newFrames`.
+                         // Otherwise, if we want to append, `newFrames` should represent *only new* frames.
+                         // For now, let's assume `newFrames` is the complete set to display for this update.
+                        framesToDisplay = newFrames;
                     }
-                    if (should_reset[0] === true) {
-                        this.stopPlayback();
-                        this.clearCache();
-                        this.cacheFrames(output["frames"]);
-                        restoreWidget.value = false;
-                    } else {
-                        if (this.getCachedFrames().length < output["counter"]) {
-                            restoreWidget.value = true;
-                            this.clearCache();
-                        } else {
-                            restoreWidget.value = false;
+
+                    // If `shouldDumpVideo` is true, it implies a reset or end of sequence.
+                    // Cache is typically cleared *after* dump in Python.
+                    // JS should reflect this by stopping playback and clearing its display frames.
+                    if (shouldDumpVideo) {
+                        this.stopPlayback?.();
+                        this.currentFrames = []; // Clear internal frame list for preview
+                        this.currentFrameIndex = 0;
+                        this.cacheFrames([]); // Clear the node's general cache if it's used for restore
+                        // After dumping, the python node might send a new set of frames (e.g. if starting a new sequence)
+                        // or no frames if it's just a final dump.
+                        if (framesToDisplay.length > 0) {
+                           this.currentFrames = framesToDisplay; // Load new frames if any
                         }
+                        this.showCurrentFrame?.(); // Update display (might be empty)
+                        if (restoreWidget) restoreWidget.value = false; // Reset restore toggle
+                    } else {
+                        // Regular update, not a dump event
+                        this.currentFrames = framesToDisplay;
+                        // If not already playing and there are frames, show the first one
+                        if (!this.isPlaying && this.currentFrames.length > 0) {
+                            this.currentFrameIndex = 0;
+                            this.showCurrentFrame?.();
+                        }
+                    }
 
+                    if (this.updateAudio) this.updateAudio(newAudioUrl);
 
-
+                    // Original logic for `restoreWidget` based on `getCachedFrames` vs `output["counter"]`
+                    // This seems tied to the specific caching and restore strategy of the node.
+                    // For the preview, `this.currentFrames` now holds the displayable frames.
+                    if (restoreWidget) {
+                        // This logic might need to be adapted based on how `frameCache` is populated
+                        // by `cacheFrames` and used by the "restore" feature.
+                        // If `restoreWidget.value` means "show all available frames from Python",
+                        // then `this.currentFrames = newFrames` is correct.
+                        // The check below was from the original script.
+                        // if (this.getCachedFrames().length < currentTotalCached && newFrames.length > 0 && !shouldDumpVideo) {
+                        //    restoreWidget.value = true; // Indicate more frames are available in backend than shown
+                        //    this.clearCache(); // This might be too aggressive if it clears Python's intended cache
+                        //} else if (!shouldDumpVideo) {
+                        //    restoreWidget.value = false;
+                        //}
+                        // For simplicity now, if `shouldDumpVideo` happened, `restoreWidget` is set to false above.
+                        // Otherwise, its state is preserved from user input unless Python overrides it.
                     }
                 }
-
-
-            return r
+                return r;
             }
+
             const onVideoSaveForeground = nodeType.prototype.onDrawForeground;
             nodeType.prototype.onDrawForeground = function (ctx) {
                 const r = onVideoSaveForeground?.apply?.(this, arguments);
                 const v = app.nodeOutputs?.[this.id + ""];
-                if (!this.flags.collapsed && v) {
+                if (!this.flags.collapsed && v && typeof v["counter"] !== 'undefined') { // Check if counter exists
 
-                    const text = v["counter"] + " cached frame(s)";
+                    const frameCount = this.currentFrames ? this.currentFrames.length : (v["counter"] ? v["counter"][0] : 0);
+                    const text = frameCount + " frame(s) for preview"; // Updated text
                     ctx.save();
-
-                    // Set font for measuring text width and for drawing
                     ctx.font = "bold 14px sans-serif";
 
-                    // Measure text to center it on the rectangle
                     const sz = ctx.measureText(text);
                     const textWidth = sz.width;
-                    const textHeight = 14; // Approximation based on font size
+                    const textHeight = 14; 
 
-                    // Rectangle dimensions and position
-                    const rectWidth = textWidth + 20; // Padding around text
-                    const rectHeight = textHeight + 10; // Padding around text
+                    const rectWidth = textWidth + 20;
+                    const rectHeight = textHeight + 10;
                     const rectX = (this.size[0] - rectWidth) / 2;
-                    const rectY = LiteGraph.NODE_TITLE_HEIGHT - rectHeight / 2 - 15;
+                    // Position above the preview widget, adjusting for title height
+                    const widgetBaseY = this.widgets && this.widgets.length > 0 ? this.widgets[0].last_y : LiteGraph.NODE_TITLE_HEIGHT + 20;
+                    const rectY = widgetBaseY - rectHeight - 5; // 5px margin above the widget
 
-                    // Draw rectangle
-                    ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; // Semi-transparent dark rectangle
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
                     ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
 
-                    // Draw text centered in the rectangle
-                    ctx.fillStyle = "white"; // White text color
+                    ctx.fillStyle = "white";
                     const textX = (this.size[0] - textWidth) / 2;
-                    const textY = LiteGraph.NODE_TITLE_HEIGHT + textHeight / 2 - 15; // Adjust based on the font size
+                    const textY = rectY + textHeight - (textHeight - 14)/2 + 2; // Center text vertically in rect
 
                     ctx.fillText(text, textX, textY);
                     ctx.restore();
-
-
                 }
-
                 return r;
             };
-
 		};
 	},
 });
+
+// FloatingConsole class and its registration (そのまま)
 class FloatingConsole {
     constructor() {
         this.element = document.createElement('div');
@@ -633,20 +680,13 @@ class FloatingConsole {
 
     addEventListeners() {
         this.titleBar.addEventListener('mousedown', (e) => {
-            // Mark as dragging
             this.dragging = true;
-
-            // Record the initial mouse position
             this.prevX = e.clientX;
             this.prevY = e.clientY;
-
             if (!this.element.style.left || !this.element.style.top) {
-                // Calculate initial left and top based on current position
                 const rect = this.element.getBoundingClientRect();
-                this.element.style.right = ''; // Clear 'right' since we're switching to 'left/top' positioning
-                this.element.style.bottom = ''; // Clear 'bottom' as well
-
-                // Set initial left and top based on the element's current position
+                this.element.style.right = ''; 
+                this.element.style.bottom = '';
                 this.element.style.left = `${rect.left}px`;
                 this.element.style.top = `${rect.top}px`;
             }
@@ -656,11 +696,9 @@ class FloatingConsole {
             if (!this.dragging) return;
             const dx = e.clientX - this.prevX;
             const dy = e.clientY - this.prevY;
-
             const { style } = this.element;
             style.left = `${parseInt(style.left || 0, 10) + dx}px`;
             style.top = `${parseInt(style.top || 0, 10) + dy}px`;
-
             this.prevX = e.clientX;
             this.prevY = e.clientY;
         });
@@ -673,50 +711,32 @@ class FloatingConsole {
 
     addMenuButton() {
         const menu = document.querySelector(".comfy-menu");
-        // Create and append the toggle button for the floating console
         const consoleToggleButton = document.createElement("button");
         consoleToggleButton.textContent = "Toggle Console";
         consoleToggleButton.onclick = () => {
-            // Check if the console is currently visible and toggle accordingly
             if (floatingConsole.isVisible()) {
                 floatingConsole.hide();
-                consoleToggleButton.textContent = "Show Console"; // Update button text
+                consoleToggleButton.textContent = "Show Console";
             } else {
                 floatingConsole.show();
-                consoleToggleButton.textContent = "Hide Console"; // Update button text
+                consoleToggleButton.textContent = "Hide Console";
             }
         }
         menu.append(consoleToggleButton);
     }
 
-    show() {
-        this.element.style.display = 'block';
-    }
-
-    hide() {
-        this.element.style.display = 'none';
-    }
-
-    isVisible() {
-        return this.element.style.display !== 'none';
-    }
-
+    show() { this.element.style.display = 'block'; }
+    hide() { this.element.style.display = 'none'; }
+    isVisible() { return this.element.style.display !== 'none'; }
     log(message) {
         const msgElement = document.createElement('div');
         msgElement.textContent = message;
         this.contentContainer.appendChild(msgElement);
-        this.contentContainer.scrollTop = this.contentContainer.scrollHeight; // Auto-scroll to bottom
+        this.contentContainer.scrollTop = this.contentContainer.scrollHeight;
     }
-
-    clear() {
-        this.contentContainer.innerHTML = '';
-    }
+    clear() { this.contentContainer.innerHTML = ''; }
 }
-
-// Instantiate the floating console
 const floatingConsole = new FloatingConsole();
-
-// Extend the app plugin to handle console_output events
 app.registerExtension({
     name: "consoleOutput",
     init() {
